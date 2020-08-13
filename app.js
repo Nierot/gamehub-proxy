@@ -6,31 +6,33 @@ const fs = require('fs');
 const path = require('path');
 const routes = require('./routes.json');
 const dynamicProxy = require('dynamic-reverse-proxy')();
-const dynRoutes = require('./dynamicRoutes.json');
+
+let currentRoutes = [];
 
 const server = http.createServer((req, res) => {
     let url = req.url;
-    let resolved = false;
     verbose(`${req.method}: ${url}`);
-
-    registerRoutes();
 
     if (url.match(/^\/register/i)) {
         verbose('Registering a new route');
-        let query = getQuery(req);
 
-        if (!query.prefix || !query.port) {
-            return error400(res);
-        }
-
-        dynamicProxy.registerRoute({
-            host: 'localhost',
-            prefix: query.prefix,
-            port: query.port
+        let body = ''
+        req.on('data', chunk => body += chunk.toString())
+        req.on('end', () => {
+            try {
+                registerRoute(JSON.parse(body));
+                dynamicProxy.registerRouteRequest(req, res);
+                res.end('ok');
+            } catch (err) {
+                res.end('500');
+            }
         })
-        res.end();
     } else {
-        let proxyObj = dynamicProxy.proxyRequest(req, res);
+        if (isRoute(req.url)) {
+            dynamicProxy.proxyRequest(req, res);
+        } else {
+            error404(res);
+        }
     }
 })
 
@@ -63,14 +65,41 @@ function error400(res) {
     sendFile(path.join(__dirname, 'static/400.html'), 400, res);
 }
 
-function registerRoutes() {
-    routes.forEach(route => {
-        dynamicProxy.registerRoute({
-            host: 'localhost',
-            prefix: route.url,
-            port: route.route.split('http://localhost:')[1].split('/')[0]
-        })
+function isRoute(url) {
+    let foundRoute = undefined;
+    let re = new RegExp('^' + url, 'ig');
+
+    currentRoutes.some(route => {
+        if (route.match(re)) {
+            foundRoute = route;
+            return true;
+        };
     })
+    verbose('Found ' + foundRoute);
+    return foundRoute;
+}
+
+function registerRoutes() {
+    routes.forEach(route => registerRouteSplit(route))
+}
+
+function registerRouteSplit(route) {
+    currentRoutes.push(route.url);
+    dynamicProxy.registerRoute({
+        host: 'localhost',
+        prefix: route.url,
+        port: route.route.split('http://localhost:')[1].split('/')[0]
+    })
+}
+
+function registerRoute(route) {
+    currentRoutes.push(route.prefix)
+    dynamicProxy.registerRoute({
+        host: 'localhost',
+        prefix: route.prefix,
+        port: route.port
+    });
+    verbose(currentRoutes);
 }
 
 function getQuery(req) {
@@ -81,14 +110,16 @@ function getQuery(req) {
         if (param.match('prefix')) {
             prefix = param.split('=')[1];
         } else {
-            param.split('=')[1];
+            port = param.split('=')[1];
         }
     })
-    verbose(params);
     return {
         prefix: prefix,
         port: port
     }
 }
 
-server.listen(8001, () => console.log('Listening on http://localhost:8001'));
+server.listen(8001, () => {
+    registerRoutes();
+    console.log('Listening on http://localhost:8001')
+});

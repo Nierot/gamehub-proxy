@@ -1,5 +1,29 @@
 [
     {
+        "url": "/",
+        "route": "http://localhost:8080/"
+    },
+    {
+        "url": "/login",
+        "route": "http://localhost:8080/login"
+    },
+    {
+        "url": "/start",
+        "route": "http://localhost:8080/start"
+    },
+    {
+        "url": "/discord/callback/success",
+        "route": "http://localhost:8080/discord/callback/success"
+    },
+    {
+        "url": "/discord/callback",
+        "route": "http://localhost:8080/discord/callback"
+    },
+    {
+        "url": "/discord",
+        "route": "http://localhost:8080/discord"
+    },
+    {
         "url": "/proxy",
         "route": "http://localhost:8079"
     }

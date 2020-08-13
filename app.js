@@ -15,9 +15,10 @@ http.createServer((req, res) => {
         res.end('oof');
     } else {
         routes.forEach(route => {
-            //verbose(route.url, url, route.url.startsWith(url))
             if (url.startsWith(route.url)) {
-                if (!resolved) proxy.web(req, res, { target: route.route });
+                let uri = req.url.replace(route.url, '')
+                verbose('Serving ' + route.route + uri)
+                if (!resolved) proxy.web(req, res, { target: route.route + uri });
                 resolved = true;
             } 
         })

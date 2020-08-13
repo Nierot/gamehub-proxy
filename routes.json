@@ -2,9 +2,5 @@
     {
         "url": "/proxy",
         "route": "http://localhost:8079"
-    },
-    {
-        "url": "/socket.io",
-        "route": "http://localhost:8079/socket.io/"
     }
 ]

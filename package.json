@@ -15,5 +15,8 @@
   "bugs": {
     "url": "https://github.com/Nierot/proxy-server/issues"
   },
-  "homepage": "https://github.com/Nierot/proxy-server#readme"
+  "homepage": "https://github.com/Nierot/proxy-server#readme",
+  "dependencies": {
+    "dynamic-reverse-proxy": "^0.7.0-alpha2"
+  }
 }

@@ -1,6 +1,5 @@
 const httpProxy = require('http-proxy');
 const http = require('http');
-const proxy = httpProxy.createProxyServer({});
 const { verbose, info, error } = require('nielog').Log;
 const fs = require('fs');
 const path = require('path');
@@ -24,23 +23,17 @@ const server = http.createServer((req, res) => {
                 dynamicProxy.registerRouteRequest(req, res);
                 res.end('ok');
             } catch (err) {
-                res.end('500');
+                error500(res);
             }
         })
     } else {
-        if (isRoute(req.url)) {
+        if (isRoute(req.url) !== undefined) {
             dynamicProxy.proxyRequest(req, res);
         } else {
             error404(res);
         }
     }
 })
-
-proxy.on('error', (err, req, res) => {
-    error(err);
-    error500(res);
-    res.end();
-});
 
 function sendFile(path, status, res) {
     var stat = fs.statSync(path);
@@ -70,7 +63,8 @@ function isRoute(url) {
     let re = new RegExp('^' + url, 'ig');
 
     currentRoutes.some(route => {
-        if (route.match(re)) {
+        info(route);
+        if (url.startsWith(route)) {
             foundRoute = route;
             return true;
         };
@@ -119,7 +113,37 @@ function getQuery(req) {
     }
 }
 
+dynamicProxy.on('registerError', (err, req, res) => {
+    res.end(err);
+    error(err)
+    //error500(res);
+});
+
+dynamicProxy.on('proxyError', (err, host, req, res) => {
+    // I don't like this module
+    res.end(` 
+    <!DOCTYPE html>
+    <html>
+        <head>
+            <title>500</title>
+            <meta charset="UTF-8">
+            <meta name="author" content="Nierot">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <link rel="stylesheet" href="https://cdn.nierot.com/-/sakura-dark.css">
+        </head>
+        <body>
+            <h1><center>500</center></h1>
+            <h3>
+                The server you are trying to connect to is offline. Please try again later.
+            </h1>
+        </body>
+    </html>
+    `)
+    error(err);
+})
+
 server.listen(8001, () => {
     registerRoutes();
+    info('Current routes: ', currentRoutes);
     console.log('Listening on http://localhost:8001')
 });

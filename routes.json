@@ -1,9 +1,5 @@
 [
     {
-        "url": "/",
-        "route": "http://localhost:8080/"
-    },
-    {
         "url": "/login",
         "route": "http://localhost:8080/login"
     },
@@ -26,5 +22,9 @@
     {
         "url": "/proxy",
         "route": "http://localhost:8079"
+    },
+    {
+        "url": "/",
+        "route": "http://localhost:8080/"
     }
 ]
